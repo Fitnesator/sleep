@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script>
+      (function() {
+        const originalConsole = window.console;
+        window.console = {
+          log: (...args) => {
+            originalConsole.log(...args);
+            window.parent.postMessage({ type: 'console', message: args.join(' ') }, '*');
+          },
+          error: (...args) => {
+            originalConsole.error(...args);
+            window.parent.postMessage({ type: 'console', message: 'Error: ' + args.join(' ') }, '*');
+          },
+          warn: (...args) => {
+            originalConsole.warn(...args);
+            window.parent.postMessage({ type: 'console', message: 'Warning: ' + args.join(' ') }, '*');
+          }
+        };
+
+        window.addEventListener('error', (event) => {
+          window.parent.postMessage({ type: 'console', message: 'Uncaught Error: ' + event.message }, '*');
+        });
+      })();
+    </script>
+  
+    <meta charset="UTF-8">
+    <title>Sleep Stage Detection Accuracy</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .chart-container {
+            position: relative;
+            height: 600px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chart-container">
+            <canvas id="accuracyChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('accuracyChart').getContext('2d');
+        
+        const data = {
+            datasets: [{
+                label: 'Sleep Detection Accuracy',
+                data: [
+                    { x: 80.8, y: 73.3, label: 'Samsung Galaxy' },
+                    { x: 75.0, y: 70.0, label: 'OURA 4' },
+                    { x: 68.8, y: 37.2, label: 'Garmin Fenix8' },
+                    { x: 58.9, y: 44.3, label: 'RingConn Gen2' },
+                    { x: 55.2, y: 36.8, label: 'Circular Slim' },
+                    { x: 54.1, y: 32.7, label: 'Ultrahuman' },
+                    { x: 41.7, y: 0.0, label: 'EQ ECTRI' }
+                ],
+                backgroundColor: 'blue',
+                pointRadius: 8
+            }]
+        };
+
+        const config = {
+            type: 'scatter',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Sleep Stage Detection Accuracy',
+                        font: {
+                            size: 16,
+                            weight: 'bold'
+                        },
+                        padding: 20
+                    },
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const point = context.raw;
+                                return `${point.label}:
+Average: ${point.x.toFixed(1)}%
+Worst: ${point.y.toFixed(1)}%`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: {
+                            display: true,
+                            text: 'Average Accuracy (%)',
+                            font: {
+                                size: 14
+                            }
+                        },
+                        min: 30,
+                        max: 90
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Worst Stage Accuracy (%)',
+                            font: {
+                                size: 14
+                            }
+                        },
+                        min: 0,
+                        max: 80
+                    }
+                },
+                animation: false
+            }
+        };
+
+        // Add point labels
+        const originalDraw = Chart.controllers.scatter.prototype.draw;
+        Chart.controllers.scatter.prototype.draw = function() {
+            originalDraw.apply(this, arguments);
+            
+            const meta = this.getMeta();
+            const ctx = this.chart.ctx;
+            
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.font = '12px Arial';
+            
+            meta.data.forEach((point, index) => {
+                const label = this.getDataset().data[index].label;
+                ctx.fillText(label, point.x, point.y - 10);
+            });
+            
+            ctx.restore();
+        };
+
+        new Chart(ctx, config);
+    </script>
+</body>
+</html>
