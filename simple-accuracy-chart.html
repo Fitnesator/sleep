@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .chart-container {
+            position: relative;
+            height: 600px;
+            width: 100%;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Sleep Stage Detection Accuracy</h2>
+        <div class="chart-container">
+            <canvas id="accuracyChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('accuracyChart').getContext('2d');
+        
+        const data = {
+            datasets: [{
+                data: [
+                    { x: 80.8, y: 73.3, label: 'Samsung Galaxy' },
+                    { x: 76.9, y: 69.2, label: 'Oura 3' },
+                    { x: 75.0, y: 70.0, label: 'Oura 4' },
+                    { x: 68.8, y: 37.2, label: 'Garmin Fenix8' },
+                    { x: 58.9, y: 44.3, label: 'RingConn Gen2' },
+                    { x: 55.2, y: 36.8, label: 'Circular Slim' },
+                    { x: 54.1, y: 32.7, label: 'Ultrahuman' },
+                    { x: 41.7, y: 0.0, label: 'EQ ECTRI' }
+                ],
+                backgroundColor: 'blue',
+                pointRadius: 8
+            }]
+        };
+
+        const config = {
+            type: 'scatter',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const point = context.raw;
+                                return `${point.label}: Avg=${point.x.toFixed(1)}%, Worst=${point.y.toFixed(1)}%`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: {
+                            display: true,
+                            text: 'Average Accuracy (%)',
+                            font: {
+                                size: 14
+                            }
+                        },
+                        min: 30,
+                        max: 90
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Worst Stage Accuracy (%)',
+                            font: {
+                                size: 14
+                            }
+                        },
+                        min: 0,
+                        max: 80
+                    }
+                }
+            }
+        };
+
+        const chart = new Chart(ctx, config);
+        
+        // Simple custom plugin to add labels to points
+        Chart.register({
+            id: 'pointLabels',
+            afterDraw: function(chart) {
+                const ctx = chart.ctx;
+                chart.data.datasets.forEach((dataset, datasetIndex) => {
+                    const meta = chart.getDatasetMeta(datasetIndex);
+                    dataset.data.forEach((datapoint, index) => {
+                        // Position for each device
+                        let xOffset = 0;
+                        let yOffset = -20;
+                        
+                        // Custom placement for Oura 3 and Oura 4 to avoid overlap
+                        if (datapoint.label === 'Oura 3') {
+                            xOffset = -40;
+                            yOffset = -10;
+                        } else if (datapoint.label === 'Oura 4') {
+                            xOffset = 40;
+                            yOffset = -10;
+                        }
+                        
+                        const position = meta.data[index].getCenterPoint();
+                        ctx.fillStyle = 'black';
+                        ctx.textAlign = 'center';
+                        ctx.font = '12px Arial';
+                        ctx.fillText(datapoint.label, position.x + xOffset, position.y + yOffset);
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
